@@ -37,6 +37,8 @@ dockyard --help
 dockyard config list
 ```
 
+AI agents can use the repository as an [Agent Skill](https://agentskills.io/home). Install or link the repository in the agent's skills directory and invoke the `dockyard` skill. See [`SKILL.md`](SKILL.md) for the agent workflow.
+
 ## Choose a private suffix
 
 Dockyard defaults to `dev.test`. Set a shorter suffix if you control DNS for it:
