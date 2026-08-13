@@ -1,0 +1,33 @@
+{
+  "name": "dockyard",
+  "version": "0.2.0",
+  "description": "Run Docker projects and Git worktrees behind stable private hostnames",
+  "type": "module",
+  "license": "MIT",
+  "author": "Tomas Pospisil",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/noximo/dockyard.git"
+  },
+  "homepage": "https://github.com/noximo/dockyard#readme",
+  "bugs": "https://github.com/noximo/dockyard/issues",
+  "keywords": [
+    "caddy",
+    "docker-compose",
+    "git-worktree",
+    "reverse-proxy",
+    "private-dns"
+  ],
+  "files": [
+    "bin"
+  ],
+  "bin": {
+    "dockyard": "./bin/dockyard.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
