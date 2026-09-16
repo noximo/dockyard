@@ -101,6 +101,8 @@ The application inside the container must listen on `0.0.0.0:3000` in this examp
 
 `HTTPS_PORT` is available for projects that need a second host port. Caddy normally terminates HTTP or HTTPS itself and forwards traffic to `HTTP_PORT`.
 
+Dockyard rechecks a registered project's saved ports when it starts. If a port was occupied by another process or a stale Compose container, it assigns a new free pair before launching the project.
+
 ## Registered projects
 
 Projects without worktrees can use any exact private hostname:

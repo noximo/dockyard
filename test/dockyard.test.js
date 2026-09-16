@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -92,6 +93,12 @@ test('domain and HTTPS settings affect generated worktree routes', () => {
   const result = run(home, ['run', '--name', 'main', '--project', 'exampleProject', 'node', '-e', '"console.log(process.env.LOCAL_URL)"']);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /https:\/\/main\.exampleproject\.dockyard\.test/);
+
+  const registered = run(home, ['project', 'add', 'exampleProject', '--folder', '.', '--url', 'exampleproject.dockyard.test', '--command', 'true']);
+  assert.equal(registered.status, 0, registered.stderr);
+  const caddyfile = readFileSync(join(home, 'Caddyfile'), 'utf8');
+  assert.match(caddyfile, /http:\/\/exampleproject\.dockyard\.test \{\n\tredir https:\/\/\{host\}\{uri\} permanent/);
+  assert.doesNotMatch(caddyfile, /redir https:\/\/[^\n]*:8443/);
 });
 
 test('short private suffixes and exact project hosts are accepted', () => {
@@ -103,6 +110,28 @@ test('short private suffixes and exact project hosts are accepted', () => {
   result = run(home, ['project', 'add', 'exampleProject', '--folder', '.', '--url', 'exampleproject.pb', '--command', 'true']);
   assert.equal(result.status, 0, result.stderr);
   assert.match(readFileSync(join(home, 'Caddyfile'), 'utf8'), /http:\/\/exampleproject\.pb/);
+});
+
+test('project start refreshes ports occupied after registration', async () => {
+  const home = mkdtempSync(join(tmpdir(), 'dockyard-'));
+  const command = "node -e \"setTimeout(() => {}, 5000)\"";
+  const added = run(home, ['project', 'add', 'exampleProject', '--folder', '.', '--url', 'exampleproject.dev.test', '--command', command]);
+  assert.equal(added.status, 0, added.stderr);
+  const original = JSON.parse(readFileSync(join(home, 'projects.json'))).projects[0];
+  const blocker = createServer();
+  await new Promise(resolve => blocker.listen(original.httpPort, '127.0.0.1', resolve));
+
+  try {
+    const started = run(home, ['project', 'start', 'exampleProject']);
+    assert.equal(started.status, 0, started.stderr);
+    const updated = JSON.parse(readFileSync(join(home, 'projects.json'))).projects[0];
+    assert.notEqual(updated.httpPort, original.httpPort);
+    assert.notEqual(updated.httpsPort, original.httpsPort);
+    assert.notEqual(updated.httpPort, updated.httpsPort);
+  } finally {
+    run(home, ['project', 'stop', 'exampleProject']);
+    await new Promise(resolve => blocker.close(resolve));
+  }
 });
 
 test('dashboard refuses non-interactive output cleanly', () => {
